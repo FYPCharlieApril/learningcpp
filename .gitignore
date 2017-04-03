@@ -1,0 +1,10 @@
+#igore all ~ files
+*~
+
+#ignore all .txt files
+*.txt
+
+#ignore executable files
+main
+test
+
