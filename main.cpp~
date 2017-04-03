@@ -12,7 +12,7 @@ int main()
   mlpack::data::Save("oh_la.txt", hg->lMat);
   
   Subgradient *sg = new Subgradient;
-  sg->fitPredict(hg, 20);  
+  sg->fitPredict(hg, 0);  
    
   delete hg, sg;
   hg = NULL;

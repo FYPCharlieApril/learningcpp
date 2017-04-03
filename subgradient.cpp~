@@ -43,8 +43,8 @@ mat Subgradient::computeDelta(mat f, Hypergraph *hg, int train_size){
     uvec allHeadId = find(hg->head.row(i) == 1);
     for (int j=0; j<lrow; j++){
        rowvec rj = f.row(j);
-       rowvec rt = rj(allTailId); // fvalue for all tails on this edge
-       rowvec rh = rj(allHeadId); // fvalue for all heads on this edgd
+       rowvec rt = rj(allTailId); // all tail on this edge
+       rowvec rh = rj(allHeadId);
        double u = rt.max();
        double v = rh.min();
        double d = hg->weight(i) * (u - v);
