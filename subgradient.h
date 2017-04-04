@@ -16,9 +16,10 @@ class Subgradient{
     double accuracy;        
 
   private:
-    mat computeDelta(mat &f, Hypergraph *hg, int train_size);
+    mat computeDelta(mat f, Hypergraph *hg, int train_size);
     mat sgm(mat f, Hypergraph *hg, int train_size);  
     mat recoverF(Hypergraph* hg, mat &f, int train_size);
+    double evalAcc(Mat<unsigned int> target, Mat<unsigned int> prediction);
 };
 
 #endif

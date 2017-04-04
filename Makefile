@@ -10,5 +10,8 @@ main: main.cpp hypergraph.cpp
 test: test.cpp
 	g++ $(SFLAG) $(CFLAGS) test.cpp $(MFLAG) $(AFLAG) -o test 
 
+eval: eval.cpp
+	g++ $(SFLAG) $(CFLAGS) eval.cpp $(MFLAG) $(AFLAG) -o eval 
+
 clean:
 	rm main

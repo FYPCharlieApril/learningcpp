@@ -1,16 +1,20 @@
 #include "hypergraph.h" 
 #define RANDOMNESS 30
 
-bool Hypergraph::constructHMat(string filename){
+bool Hypergraph::constructHMat(string filename, bool labelFront){
   Mat<int> dataset; 
   // data preprocessing, preprocess the categorical data to int category
   data::DatasetInfo info; 
   data::Load("mushroom.csv", dataset, info, true);
-  
+  Mat<int> oriLabel, oriFeature;
   // split the labels and features. They will be separately one-hot encoded. 
-  Mat<int> oriLabel = dataset(0, span::all);
-  Mat<int> oriFeature = dataset(span(1, dataset.n_rows-1), span::all);
-  
+  if (labelFront){
+    oriLabel = dataset(0, span::all);
+    oriFeature = dataset(span(1, dataset.n_rows-1), span::all);
+  }else{
+    oriLabel = dataset(span(0, dataset.n_rows-2), span::all);
+    oriFeature = dataset(dataset.n_rows-1, span::all);
+  }
   // doing one hot encoding separately on label matrix and feature matrix and shuffle the matrices
   hMat = oneHotEncoding(oriFeature);
   lMat = oneHotEncoding(oriLabel);

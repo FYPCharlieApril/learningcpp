@@ -20,7 +20,7 @@ class Hypergraph{
     Mat<unsigned int> head;
     Mat<unsigned int> tail;
     Row<double> weight;
-    bool constructHMat(string filename);
+    bool constructHMat(string filename, bool label_front);
   private:
     Mat<unsigned int> oneHotEncoding(Mat<int> oriData);
     void shuffleMat(int time_to_shuffle);
