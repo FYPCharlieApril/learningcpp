@@ -8,12 +8,12 @@ int main()
 { 
   Hypergraph *hg = new Hypergraph;
   bool res = hg->constructHMat("mushroom.csv");
-  mlpack::data::Save("oh_fea.txt", hg->hMat);
-  mlpack::data::Save("oh_la.txt", hg->lMat);
+  mlpack::data::Save("log/oh_fea.txt", hg->hMat);
+  mlpack::data::Save("log/oh_la.txt", hg->lMat);
   
   Subgradient *sg = new Subgradient;
-  sg->fitPredict(hg, 20);  
-   
+  
+  mlpack::data::Save("log/result.txt", sg->fitPredict(hg, 200));
   delete hg, sg;
   hg = NULL;
   return 0;

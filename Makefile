@@ -9,3 +9,6 @@ main: main.cpp hypergraph.cpp
 
 test: test.cpp
 	g++ $(SFLAG) $(CFLAGS) test.cpp $(MFLAG) $(AFLAG) -o test 
+
+clean:
+	rm main

@@ -19,7 +19,7 @@ class Hypergraph{
     Mat<unsigned int> lMat;
     Mat<unsigned int> head;
     Mat<unsigned int> tail;
-    Row<unsigned int> weight;
+    Row<double> weight;
     bool constructHMat(string filename);
   private:
     Mat<unsigned int> oneHotEncoding(Mat<int> oriData);

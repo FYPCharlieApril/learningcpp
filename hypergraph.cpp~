@@ -14,9 +14,8 @@ bool Hypergraph::constructHMat(string filename){
   // doing one hot encoding separately on label matrix and feature matrix and shuffle the matrices
   hMat = oneHotEncoding(oriFeature);
   lMat = oneHotEncoding(oriLabel);
-  // head = ones<Mat<unsigned int>>(hMat.n_rows, hMat.n_cols);
-  // tail = ones<Mat<unsigned int>>(hMat.n_rows, hMat.n_cols);
-  weight = ones<Row<unsigned int>>(hMat.n_rows);
+  tail = hMat; head = hMat; 
+  weight = ones<Row<double>>(hMat.n_rows);
   shuffleMat(RANDOMNESS);
   return true;
 }
@@ -49,11 +48,6 @@ void Hypergraph::shuffleMat(int time_to_shuffle){
   // shuffle the data for randomness, truer randomness will be generated with higher RANDOMNESS value
   srand (time(NULL));
 
-  //mlpack::data::Save("testtxt/orilMat.txt", lMat);
-  //mlpack::data::Save("testtxt/orihMat.txt", hMat);
-  //mlpack::data::Save("testtxt/orihead.txt", head);
-  //mlpack::data::Save("testtxt/oritail.txt", tail);
-
   int r = rand() % time_to_shuffle;
   int hrow = hMat.n_rows; 
   int hcol = hMat.n_cols;
@@ -61,8 +55,7 @@ void Hypergraph::shuffleMat(int time_to_shuffle){
   int lcol = lMat.n_cols;
 
   Mat<unsigned int> candidate = join_vert(join_vert(lMat, hMat), join_vert(head, tail));
-  //printf("canr: %d canc: %d\n", candidate.n_rows, candidate.n_cols);
-  mlpack::data::Save("testtxt/candidate.txt", candidate);
+  mlpack::data::Save("log/candidate.txt", candidate);
 
   for (int i=0; i<r; i++){
     candidate = shuffle(candidate, 1);
@@ -73,9 +66,4 @@ void Hypergraph::shuffleMat(int time_to_shuffle){
   hMat = candidate(span(lrow, lrow + hrow - 1), span::all);
   head = candidate(span(lrow + hrow, lrow + 2 * hrow - 1), span::all);
   tail = candidate(span(lrow + 2 * hrow, lrow + 3 * hrow - 1), span::all);
-  
-  mlpack::data::Save("testtxt/lMat.txt", lMat);
-  mlpack::data::Save("testtxt/hMat.txt", hMat);
-  mlpack::data::Save("testtxt/head.txt", head);
-  mlpack::data::Save("testtxt/tail.txt", tail);
 }
