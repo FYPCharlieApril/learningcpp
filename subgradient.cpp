@@ -1,6 +1,6 @@
 #include "subgradient.h"
 
-Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size){
+Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, double precision){
   Mat<unsigned int> result = zeros<Mat<unsigned int>>(hg->lMat.n_rows, hg->lMat.n_cols);
   
   int lRow = hg->lMat.n_rows; int lCol = hg->lMat.n_cols;
@@ -12,11 +12,9 @@ Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size){
   }
   
   mat f_a = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
+  //start with original cases with all data point belonging to absolutely one class
   for (int i=0; i<lRow; i++){
-    //printf("%d: %f ", i, norm(f_list[i]));
-    mat temp = sgm(f_list[i], hg, train_size);
-    //printf("%f\n", norm(temp));
-    //data::Save("log/res_"+to_string(i)+".txt", temp);
+    mat temp = sgm(f_list[i], hg, train_size, precision);
     f_a = f_a + temp;
   }
    
@@ -42,9 +40,9 @@ Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size){
 
 // compute the delta value for f in each iteration
 mat Subgradient::computeDelta(mat f, Hypergraph *hg, int train_size){
-  int hrow = hg -> hMat.n_rows; // number of edges 117
-  int hcol = hg -> hMat.n_cols; // dataset size 8124 
-  int lrow = hg -> lMat.n_rows; // number of classes 2
+  int hrow = hg -> hMat.n_rows; 
+  int hcol = hg -> hMat.n_cols;  
+  int lrow = hg -> lMat.n_rows; 
   
   mat f_out = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
   //f_out = recoverF(hg, f_out, train_size);
@@ -60,20 +58,19 @@ mat Subgradient::computeDelta(mat f, Hypergraph *hg, int train_size){
        rowvec rt = zeros<rowvec>(allTailId.n_rows);  
        rowvec rh = zeros<rowvec>(allHeadId.n_rows);
        
+       //take all tails on this edge
        for (int k=0; k<allTailId.n_rows; k++){
          rt(k) = rj(allTailId(k));
        } 
        
+       //take all heads on this edge
        for (int k=0; k<allHeadId.n_rows; k++){
          rh(k) = rj(allHeadId(k));
        } 
        
-       double u = rt.max();
-       double v = rh.min();
+       double u = max(rt);
+       double v = min(rh);
        double d = hg->weight(i) * (u - v); // currently derivative for (u - v) ^ 2, might be changed 
-       //printf("u: %.2f  v: %.2f\n", u, v);
-       //printf("d: %.2f\n", d);
-       //need to be changed 
        if (u - v > 0){
          uword id;
 	 for (int k=0; k<allTailId.n_rows; k++){
@@ -91,15 +88,15 @@ mat Subgradient::computeDelta(mat f, Hypergraph *hg, int train_size){
 }
 
 // the subgradient method core function
-mat Subgradient::sgm(mat f, Hypergraph *hg, int train_size){
-  for (int i=0; i<10000; i++){
+mat Subgradient::sgm(mat f, Hypergraph *hg, int train_size, double precision){
+  double diff = 1000.0;
+  for (int i=0; i<1/precision; i++){
     //printf("Current step: %d\n", i);
+    mat f_old = f;
     mat gn = computeDelta(f, hg, train_size);
-    //printf("fnorm: %f ", norm(f));
     f = f - (0.9/norm(gn)) * gn;
-    //printf("%f ", norm(f));
     recoverF(hg, f, train_size);
-    //printf("%f \n", norm(f));
+    diff = abs(norm(f_old - f));
   }
   return f;
 }
@@ -117,8 +114,8 @@ mat Subgradient::recoverF(Hypergraph* hg, mat &f, int train_size){
 }
 
 double Subgradient::evalAcc(Mat<unsigned int> target, Mat<unsigned int> prediction){
-  int r = target.n_rows; // 2
-  int c = target.n_cols; // 8124
+  int r = target.n_rows; 
+  int c = target.n_cols; 
   int coun = 0;
   for (int i=0; i<c; i++){
     bool flag = true;
