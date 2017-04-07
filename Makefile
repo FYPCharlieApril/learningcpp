@@ -4,8 +4,8 @@ AFLAG = -larmadillo
 OBJ = main.cpp hypergraph.cpp subgradient.cpp
 SFLAG = -std=c++11
  
-main: main.cpp hypergraph.cpp
-	g++ $(SFLAG) $(CFLAGS) $(OBJ) $(MFLAG) $(AFLAG) -o main 
+main: main.cpp hypergraph.cpp subgradient.cpp
+	g++ $(SFLAG) $(CFLAGS) $(OBJ) $(MFLAG) $(AFLAG) -pthread -o main 
 
 test: test.cpp
 	g++ $(SFLAG) $(CFLAGS) test.cpp $(MFLAG) $(AFLAG) -o test 
@@ -14,4 +14,4 @@ eval: eval.cpp
 	g++ $(SFLAG) $(CFLAGS) eval.cpp $(MFLAG) $(AFLAG) -o eval 
 
 clean:
-	rm main
+	rm main 

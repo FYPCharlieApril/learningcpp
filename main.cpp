@@ -4,6 +4,9 @@
 #include "hypergraph.h"
 #include "subgradient.h"
 #include <fstream>
+
+#define PREC_C 1000000
+#define FOLDSIZE 20
 int main(int argc, char* argv[])
 { 
   string datasetname = argv[1];
@@ -12,8 +15,8 @@ int main(int argc, char* argv[])
   ofstream myfile;
   myfile.open ("log/record1.txt", ios::out);
   myfile << "[Precision] "+to_string(precision)<<endl;
-  for (int i=1; i<=10; i++){
-    myfile << "[Number of labeled data] " + to_string(20 * i) <<endl;
+  for (int i=10; i<=10; i++){
+    myfile << "[Number of labeled data] " + to_string(FOLDSIZE * i) <<endl;
     for (int j=0; j<5; j++){
           
 	  Hypergraph *hg = new Hypergraph;
@@ -21,8 +24,12 @@ int main(int argc, char* argv[])
 	  bool res = hg->constructHMat("dataset/"+datasetname, front);
 	  mlpack::data::Save("log/oh_fea.txt", hg->hMat);
 	  mlpack::data::Save("log/oh_la.txt", hg->lMat);
-
 	  
+          //place to decide the precision of the training, n_rows of hMat means how many information we have, 
+          //while lMat.n_rows shows how complicate the problem is 
+          if (precision == 0.0){
+            precision = 1.0/(PREC_C*hg->lMat.n_rows/hg->hMat.n_rows);
+          }
 	  //record the start time
 	  struct timeval tp;
 	  gettimeofday(&tp, NULL);
@@ -31,7 +38,7 @@ int main(int argc, char* argv[])
 	  Subgradient *sg = new Subgradient;
 
 	  //core work here
-	  Mat<unsigned int> result = sg->fitPredict(hg, 20*i, precision);
+	  Mat<unsigned int> result = sg->fitPredict(hg, FOLDSIZE * i, precision);
 
           myfile << "[accuracy] " + to_string(j) + ": " <<sg->accuracy<<endl;
 	  //record the end time of the task
@@ -45,7 +52,7 @@ int main(int argc, char* argv[])
 	  int min = sec / 60;
 	  sec = sec % 60;
           
-          myfile << "[time] "<<min<<" mins"<<sec<<" secs"<<endl;
+          myfile << "[time] "<<min<<" mins "<<sec<<" secs"<<endl;
 	  printf("Spent time: %d minutes %d seconds\n", min, sec);
           
           // deal with the useless pointer
