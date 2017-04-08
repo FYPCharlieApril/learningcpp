@@ -1,6 +1,8 @@
 #include "subgradient.h"
 #define algcon 0.9
 double normc = 0.0;
+mat f_a;
+mutex mylock;
 
 Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, double precision){
   Mat<unsigned int> result = zeros<Mat<unsigned int>>(hg->lMat.n_rows, hg->lMat.n_cols);
@@ -13,13 +15,18 @@ Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, double
     recoverF(hg, f_list[i], train_size);
   }
   
-  mat f_a = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
+  f_a = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
   //start with original cases with all data point belonging to absolutely one class
+  thread sgmWorker[lRow];
   for (int i=0; i<lRow; i++){
-    mat temp = sgm(f_list[i], hg, train_size, precision);
-    f_a = f_a + temp;
+    sgmWorker[i] = thread([=] {sgm(f_list[i], hg, train_size, precision);});
+    //sgm(f_list[i], hg, train_size, precision);
   }
-   
+
+  for (int i=0; i<lRow; i++){
+    sgmWorker[i].join();
+  }  
+
   f_a = f_a / lRow; //take the average of the prediction matrices
   recoverF(hg, f_a, train_size); 
   data::Save("log/f_a.txt", f_a);
@@ -107,7 +114,7 @@ mat Subgradient::computeDelta(mat &f, Hypergraph *hg, int train_size){
 }
 
 // the subgradient method core function
-mat Subgradient::sgm(mat f, Hypergraph *hg, int train_size, double precision){
+void Subgradient::sgm(mat f, Hypergraph *hg, int train_size, double precision){
   //double diff = 1000.0;
   //while (diff > precision){
   for (int i=0; i<1/precision; i++){
@@ -117,7 +124,9 @@ mat Subgradient::sgm(mat f, Hypergraph *hg, int train_size, double precision){
     recoverF(hg, f, train_size);
     //diff = abs(norm(f-f_old));
   }
-  return f;
+  mylock.try_lock();
+  f_a += f;
+  mylock.unlock();
 }
 
 // recover the prediction value to the given label for the labeled data
