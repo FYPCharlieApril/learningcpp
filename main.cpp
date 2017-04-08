@@ -6,17 +6,19 @@
 #include <fstream>
 
 #define PREC_C 1000000
-#define FOLDSIZE 20
 int main(int argc, char* argv[])
 { 
   string datasetname = argv[1];
   double precision = atof(argv[2]);
   bool front = atoi(argv[3]);
+  int from = atoi(argv[4]);  
+  int to = atoi(argv[5]);
+  int foldsize = atoi(argv[6]);
   ofstream myfile;
   myfile.open ("log/record1.txt", ios::out);
   myfile << "[Precision] "+to_string(precision)<<endl;
-  for (int i=10; i<=10; i++){
-    myfile << "[Number of labeled data] " + to_string(FOLDSIZE * i) <<endl;
+  for (int i=from; i<=to; i++){
+    myfile << "[Number of labeled data] " + to_string(foldsize * i) <<endl;
     for (int j=0; j<5; j++){
           
 	  Hypergraph *hg = new Hypergraph;
@@ -38,7 +40,7 @@ int main(int argc, char* argv[])
 	  Subgradient *sg = new Subgradient;
 
 	  //core work here
-	  Mat<unsigned int> result = sg->fitPredict(hg, FOLDSIZE * i, precision);
+	  Mat<unsigned int> result = sg->fitPredict(hg, foldsize * i, precision);
 
           myfile << "[accuracy] " + to_string(j) + ": " <<sg->accuracy<<endl;
 	  //record the end time of the task
