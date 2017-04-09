@@ -1,9 +1,38 @@
 #include "subgradient.h"
 #define algcon 0.9
+#include <math.h>
+#define alpha 1.0
 double normc = 0.0;
 mutex mylock;
 
-Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, double precision){
+double actFunc(double x, char method){
+  switch (method){
+    case 's':  //sigmoid function
+      return 1.0/(1.0+exp(-x));
+    case 't':  //tanh function
+      return tanh(x);
+    case 'p':  //soft plus function
+      return log(1+exp(x));
+    case 'n':  //soft sign function
+      return x/(1+abs(x));
+    case 'e':  //exponential linear unit (ELU) function
+      if (x < 0)
+        return alpha*(exp(x)-1);
+      else
+        return x;
+    default:
+      return x;
+  }
+}
+
+double lossGradient(double u, double v, char method){
+  switch (method){
+    default: // default function: quadratic
+      return u-v;
+  }
+}
+
+Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, double precision, char activate, char lossfunc){
   Mat<unsigned int> result = zeros<Mat<unsigned int>>(hg->lMat.n_rows, hg->lMat.n_cols);
   mat f_a = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
   int lRow = hg->lMat.n_rows; int lCol = hg->lMat.n_cols;
@@ -28,13 +57,12 @@ Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, double
     int res_c = 0;
     double pre_val = -std::numeric_limits<double>::infinity();
     for (int j=0; j<lRow; j++){
-    //printf("r: %d, c: %d    %f\n", j, i, f_a(j, i));
-      if (f_a(j, i) >= pre_val){
+      double mapped = actFunc(f_a(j, i), activate);
+      if (mapped >= pre_val){
         res_c = j;
-        pre_val = f_a(j, i);
+        pre_val = mapped;
       }
     }
-    //printf("res_c: %d\n", res_c);
   
     result(res_c, i) = 1;
   }
@@ -76,7 +104,7 @@ mat Subgradient::computeDelta(mat &f, Hypergraph *hg, int train_size){
        
        double u = max(rt); //may be replaced by heap
        double v = min(rh); //may be replaced by heap
-       double d = hg->weight(i) * (u - v); // currently derivative for (u - v) ^ 2, might be changed 
+       double d = hg->weight(i) * lossGradient(u, v, 'q'); // currently derivative for (u - v) ^ 2, might be changed 
        int ind = j*hrow+i;
        if (u - v >= 0){
          uword id;

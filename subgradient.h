@@ -14,7 +14,7 @@ using namespace mlpack;
 
 class Subgradient{
   public:
-    Mat<unsigned int> fitPredict(Hypergraph *hg, int train_size, double precision);
+    Mat<unsigned int> fitPredict(Hypergraph *hg, int train_size, double precision, char activate, char lossfunc);
     double accuracy;        
 
   private:

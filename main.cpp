@@ -14,13 +14,15 @@ int main(int argc, char* argv[])
   int from = atoi(argv[4]);  
   int to = atoi(argv[5]);
   int foldsize = atoi(argv[6]);
-  string resFile = argv[7];
+  char activate = *argv[7];
+  char lossfunc = *argv[8];
+  string resFile = argv[9];
   ofstream myfile;
-  myfile.open ("log/"+resFile+".txt", ios::out);
+  myfile.open ("log/"+resFile+".txt", ios::out | ios::app);
   myfile << "[Precision] "+to_string(precision)<<endl;
   for (int i=from; i<=to; i++){
     myfile << "[Number of labeled data] " + to_string(foldsize * i) <<endl;
-    for (int j=0; j<5; j++){
+    for (int j=0; j<1; j++){
           
 	  Hypergraph *hg = new Hypergraph;
  
@@ -41,7 +43,7 @@ int main(int argc, char* argv[])
 	  Subgradient *sg = new Subgradient;
 
 	  //core work here
-	  Mat<unsigned int> result = sg->fitPredict(hg, foldsize * i, precision);
+	  Mat<unsigned int> result = sg->fitPredict(hg, foldsize * i, precision, activate, lossfunc);
 
           myfile << "[accuracy] " + to_string(j) + ": " <<sg->accuracy<<endl;
 	  //record the end time of the task
