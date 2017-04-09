@@ -19,7 +19,7 @@ class Subgradient{
 
   private:
     mat computeDelta(mat &f, Hypergraph *hg, int train_size);
-    void sgm(mat f, Hypergraph *hg, int train_size, double precision);  
+    void sgm(Hypergraph *hg, int train_size, double precision, int ind, mat &f_a);  
     mat recoverF(Hypergraph* hg, mat &f, int train_size);
     double evalAcc(Mat<unsigned int> target, Mat<unsigned int> prediction);
     //void worker(mat f, Hypergraph *hg, uvec allTailId, uvec allHeadId, int classnum, int edgenum, mat &f_out);

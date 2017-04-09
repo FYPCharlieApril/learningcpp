@@ -14,8 +14,9 @@ int main(int argc, char* argv[])
   int from = atoi(argv[4]);  
   int to = atoi(argv[5]);
   int foldsize = atoi(argv[6]);
+  string resFile = argv[7];
   ofstream myfile;
-  myfile.open ("log/record1.txt", ios::out);
+  myfile.open ("log/"+resFile+".txt", ios::out);
   myfile << "[Precision] "+to_string(precision)<<endl;
   for (int i=from; i<=to; i++){
     myfile << "[Number of labeled data] " + to_string(foldsize * i) <<endl;
