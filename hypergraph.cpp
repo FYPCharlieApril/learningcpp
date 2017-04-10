@@ -6,6 +6,8 @@ bool Hypergraph::constructHMat(string filename, bool labelFront){
   // data preprocessing, preprocess the categorical data to int category
   data::DatasetInfo info; 
   data::Load(filename, dataset, info, true);
+  
+  data::Save("log/dataset.txt", dataset);
   Mat<int> oriLabel, oriFeature;
   // split the labels and features. They will be separately one-hot encoded. 
   if (labelFront){

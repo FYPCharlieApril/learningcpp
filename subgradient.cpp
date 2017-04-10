@@ -27,6 +27,8 @@ double actFunc(double x, char method){
 
 double lossGradient(double u, double v, char method){
   switch (method){
+    case 'g':
+      return -u*exp(-u*u)+v*exp(-v*v);
     default: // default function: quadratic
       return u-v;
   }
