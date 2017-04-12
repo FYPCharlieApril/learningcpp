@@ -11,13 +11,11 @@ double actFunc(double x, char method){
   x = 2 * x - 1;
   switch (method){
     case 's':  //sigmoid function
-      return 1.0/(1.0+exp(-x));
-    case 't':  //tanh function
-      return tanh(x);
+      return 1.0 / (1.0 + exp(-4 * x));
     case 'p':  //soft plus function
-      return log(1+exp(x));
+      return log(1+exp(2 * x));
     case 'n':  //soft sign function
-      return x/(1+abs(x));
+      return 1.5 * x / (1 + abs(2 * x)) + 0.5;
     case 'e':  //exponential linear unit (ELU) function
       if (x < 0)
         return alpha*(exp(x)-1);
