@@ -2,10 +2,7 @@
 #define algcon 0.9
 #include <math.h>
 #define alpha 1.0
-double normc = 0.0;
 mutex mylock;
-
-void majorityVote(mat &f, Hypergraph *hg, int train_size, int i, double &normc, uvec allTailId, uvec allHeadId, char lossfunc, int ilist[], int jlist[], double dlist[]);
 
 double actFunc(double x, char method){
   x = 2 * x - 1;
@@ -13,7 +10,7 @@ double actFunc(double x, char method){
     case 's':  //sigmoid function
       return 1.0 / (1.0 + exp(-4 * x));
     case 'p':  //soft plus function
-      return log(1+exp(2 * x));
+      return 1.75 * log(1+exp(2 * x));
     case 'n':  //soft sign function
       return 1.5 * x / (1 + abs(2 * x)) + 0.5;
     case 'e':  //exponential linear unit (ELU) function
@@ -78,10 +75,7 @@ mat Subgradient::computeDelta(mat &f, Hypergraph *hg, int train_size, char lossf
   int hrow = hg -> hMat.n_rows; 
   int hcol = hg -> hMat.n_cols;  
   int lrow = hg -> lMat.n_rows; 
-  int aSize = hrow*lrow;
-  int ilist[aSize];
-  int jlist[aSize];
-  double dlist[aSize];
+  mat f_out = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
   //mat f_out = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
   //f_out = recoverF(hg, f_out, train_size);
   double normc = 0.0;
@@ -90,26 +84,7 @@ mat Subgradient::computeDelta(mat &f, Hypergraph *hg, int train_size, char lossf
     Row<unsigned int> headrow = hg->head.row(i);
     uvec allTailId = find(tailrow == 1); // indices of all the tails of this edge
     uvec allHeadId = find(headrow == 1); // indices of all the heads of this edge
-    majorityVote(f, hg, train_size, i, normc, allTailId, allHeadId, lossfunc, ilist, jlist, dlist);
-  }
-  normc = sqrt(normc);
-  for (int i=0; i<aSize; i++){
-    double d = algcon * dlist[i] / normc;
-    int m = ilist[i];
-    int n = jlist[i];
-    if (m>-1)
-      f(m, n) -= d;
-  }
-  //return f_out;
-  return f;
-}
-
-void majorityVote(mat &f, Hypergraph *hg, int train_size, int i, double &normc, uvec allTailId, uvec allHeadId, char lossfunc, int *ilist, int *jlist, double *dlist){
-  int hrow = hg -> hMat.n_rows; 
-  int hcol = hg -> hMat.n_cols;  
-  int lrow = hg -> lMat.n_rows; 
-  
-  for (int j=0; j<lrow; j++){ // for each class
+    for (int j=0; j<lrow; j++){ // for each class
        rowvec rj = f.row(j); 
        rowvec rt = zeros<rowvec>(allTailId.n_rows);  
        rowvec rh = zeros<rowvec>(allHeadId.n_rows);
@@ -128,40 +103,32 @@ void majorityVote(mat &f, Hypergraph *hg, int train_size, int i, double &normc, 
        double v = min(rh); //may be replaced by heap
        double d = hg->weight(i) * lossGradient(u, v, lossfunc); 
        int ind = j*hrow+i;
-       if (u - v >= 0){
+       if (u - v > 0){
          uword id;
 	 for (int k=0; k<allTailId.n_rows; k++){
            if (u == rj(allTailId(k))){ 
              id = allTailId(k);
            }
          }
-         
-         ilist[ind] = j;
-         jlist[ind] = id;
-         dlist[ind] = d;
-         //f_out(j, id) += d;
-         normc += d*d;
-       }else{
-         ilist[ind] = -1;
+         f_out(j, id) += d;
        }
     }
+  }
+  return f_out;
 }
 
 // the subgradient method core function
 void Subgradient::sgm(Hypergraph *hg, int train_size, double precision, int ind, mat &f_a,char activate, char lossfunc){
-  double diff = 1000.0;
-  //mat f_w = f;
-  int lRow = hg->lMat.n_rows; int lCol = hg->lMat.n_cols;
+  int lRow = hg->lMat.n_rows; 
+  int lCol = hg->lMat.n_cols;
   mat f = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
   f.row(ind) = ones<rowvec>(lCol);
   recoverF(hg, f, train_size);
-  //while (diff > precision){
   for (int i=0; i<1/precision; i++){
     //printf("Current step: %d\n", i);
-    //mat f_old = f;
-    computeDelta(f, hg, train_size, lossfunc);
+    mat gn = computeDelta(f, hg, train_size, lossfunc);
+    f = f - (0.9/norm(gn)) * gn;
     recoverF(hg, f, train_size);
-    //diff = abs(norm(f-f_old));
   }
   
   for (int i=0; i<lRow; i++)

@@ -2,11 +2,11 @@
 #define algcon 0.9
 #include <math.h>
 #define alpha 1.0
-double normc = 0.0;
+#include <unistd.h>
+//mutex lock for parallel computing
 mutex mylock;
 
-void majorityVote(mat &f, Hypergraph *hg, int train_size, int i, double &normc, uvec allTailId, uvec allHeadId, char lossfunc, int ilist[], int jlist[], double dlist[]);
-
+//activation function to activate the raw prediction result
 double actFunc(double x, char method){
   x = 2 * x - 1;
   switch (method){
@@ -22,10 +22,11 @@ double actFunc(double x, char method){
       else
         return x;
     default:
-      return x;
+      return (x + 1) / 2;
   }
 }
 
+//alternatives for the loss function
 double lossGradient(double u, double v, char method){
   double diff = u-v;
   switch (method){
@@ -36,37 +37,37 @@ double lossGradient(double u, double v, char method){
   }
 }
 
-Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, double precision, char activate, char lossfunc){
+Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, char actfunc, char lossfunc ){
   Mat<unsigned int> result = zeros<Mat<unsigned int>>(hg->lMat.n_rows, hg->lMat.n_cols);
-  mat f_a = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
+  
   int lRow = hg->lMat.n_rows; int lCol = hg->lMat.n_cols;
-
+  
   //start with original cases with all data point belonging to absolutely one class
   thread sgmWorker[lRow];
+  mat f_a = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
+
   for (int i=0; i<lRow; i++){
-    sgmWorker[i] = thread(&Subgradient::sgm, this, hg, train_size, precision, i, ref(f_a), activate, lossfunc);
-    //sgm(f_list[i], hg, train_size, precision, f_a);
+    sgmWorker[i] = thread(&Subgradient::sgm, this, hg, train_size, actfunc, lossfunc, i, ref(f_a));
   }
+
   for (int i=0; i<lRow; i++){
     sgmWorker[i].join();
   }  
 
   f_a = f_a / lRow; //take the average of the prediction matrices
-  recoverF(hg, f_a, train_size); 
-  
-  data::Save("log/f_a.txt", f_a);
 
+  recoverF(hg, f_a, train_size); 
+  data::Save("log/f_a.txt", f_a);
   //decide the classification for the final result, take the class with largest prediction value
   for (int i=0; i<lCol; i++){
     int res_c = 0;
     double pre_val = -std::numeric_limits<double>::infinity();
     for (int j=0; j<lRow; j++){
-      if (f_a(j, i) >= pre_val){
+      if (f_a(j, i) > pre_val){
         res_c = j;
         pre_val = f_a(j, i);
       }
     }
-  
     result(res_c, i) = 1;
   }
   evalAcc(hg->lMat, result);
@@ -74,46 +75,23 @@ Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, double
 }
 
 // compute the delta value for f in each iteration
-mat Subgradient::computeDelta(mat &f, Hypergraph *hg, int train_size, char lossfunc){
-  int hrow = hg -> hMat.n_rows; 
-  int hcol = hg -> hMat.n_cols;  
-  int lrow = hg -> lMat.n_rows; 
-  int aSize = hrow*lrow;
-  int ilist[aSize];
-  int jlist[aSize];
-  double dlist[aSize];
-  //mat f_out = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
-  //f_out = recoverF(hg, f_out, train_size);
-  double normc = 0.0;
+mat Subgradient::computeDelta(mat f, Hypergraph *hg, int train_size, char actfunc, char lossfunc){
+  int hrow = hg -> hMat.n_rows; // number of edges 117
+  int hcol = hg -> hMat.n_cols; // dataset size 8124 
+  int lrow = hg -> lMat.n_rows; // number of classes 2
+  
+  mat f_out = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
+
   for (int i=0; i<hrow; i++){ // for each edge
     Row<unsigned int> tailrow = hg->tail.row(i);
     Row<unsigned int> headrow = hg->head.row(i);
     uvec allTailId = find(tailrow == 1); // indices of all the tails of this edge
     uvec allHeadId = find(headrow == 1); // indices of all the heads of this edge
-    majorityVote(f, hg, train_size, i, normc, allTailId, allHeadId, lossfunc, ilist, jlist, dlist);
-  }
-  normc = sqrt(normc);
-  for (int i=0; i<aSize; i++){
-    double d = algcon * dlist[i] / normc;
-    int m = ilist[i];
-    int n = jlist[i];
-    if (m>-1)
-      f(m, n) -= d;
-  }
-  //return f_out;
-  return f;
-}
+    for (int j=0; j<lrow; j++){ // for each class
 
-void majorityVote(mat &f, Hypergraph *hg, int train_size, int i, double &normc, uvec allTailId, uvec allHeadId, char lossfunc, int *ilist, int *jlist, double *dlist){
-  int hrow = hg -> hMat.n_rows; 
-  int hcol = hg -> hMat.n_cols;  
-  int lrow = hg -> lMat.n_rows; 
-  
-  for (int j=0; j<lrow; j++){ // for each class
        rowvec rj = f.row(j); 
        rowvec rt = zeros<rowvec>(allTailId.n_rows);  
        rowvec rh = zeros<rowvec>(allHeadId.n_rows);
-       
        //take all tails on this edge
        for (int k=0; k<allTailId.n_rows; k++){
          rt(k) = rj(allTailId(k));
@@ -123,59 +101,50 @@ void majorityVote(mat &f, Hypergraph *hg, int train_size, int i, double &normc, 
        for (int k=0; k<allHeadId.n_rows; k++){
          rh(k) = rj(allHeadId(k));
        } 
-       
        double u = max(rt); //may be replaced by heap
        double v = min(rh); //may be replaced by heap
        double d = hg->weight(i) * lossGradient(u, v, lossfunc); 
-       int ind = j*hrow+i;
-       if (u - v >= 0){
+       if (u - v > 0){
          uword id;
 	 for (int k=0; k<allTailId.n_rows; k++){
            if (u == rj(allTailId(k))){ 
              id = allTailId(k);
            }
          }
-         
-         ilist[ind] = j;
-         jlist[ind] = id;
-         dlist[ind] = d;
-         //f_out(j, id) += d;
-         normc += d*d;
-       }else{
-         ilist[ind] = -1;
+         f_out(j, id) += d;
        }
     }
+  }
+  recoverF(hg, f_out, train_size);
+  return f_out;
 }
 
 // the subgradient method core function
-void Subgradient::sgm(Hypergraph *hg, int train_size, double precision, int ind, mat &f_a,char activate, char lossfunc){
-  double diff = 1000.0;
-  //mat f_w = f;
-  int lRow = hg->lMat.n_rows; int lCol = hg->lMat.n_cols;
+mat Subgradient::sgm(Hypergraph *hg, int train_size, char actfunc, char lossfunc, int ind, mat& f_a){
+  int lRow = hg->lMat.n_rows; 
+  int lCol = hg->lMat.n_cols;
   mat f = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
   f.row(ind) = ones<rowvec>(lCol);
-  recoverF(hg, f, train_size);
-  //while (diff > precision){
-  for (int i=0; i<1/precision; i++){
-    //printf("Current step: %d\n", i);
-    //mat f_old = f;
-    computeDelta(f, hg, train_size, lossfunc);
+  f = recoverF(hg, f, train_size);
+  for (int i=0; i<1000; i++){
+    mat gn = computeDelta(f, hg, train_size, actfunc, lossfunc);
+    f = f - (0.9/norm(gn)) * gn;
     recoverF(hg, f, train_size);
-    //diff = abs(norm(f-f_old));
   }
   
-  for (int i=0; i<lRow; i++)
-    for (int j=0; j<lCol; j++)
-      f(i, j) = actFunc(f(i, j), activate);
+  for (int i=0; i<f.n_rows; i++)
+    for (int j=0; j<f.n_cols; j++)
+      f(i, j) = actFunc(f(i, j), actfunc);
+  
   mylock.lock();
   f_a += f;
   mylock.unlock();
+  return f;
 }
 
 // recover the prediction value to the given label for the labeled data
 mat Subgradient::recoverF(Hypergraph* hg, mat &f, int train_size){
-  int lrow = hg -> lMat.n_rows; // number of classes 2
-  //printf("%d %d\n",lrow, train_size);
+  int lrow = hg -> lMat.n_rows; 
   for (int i=0; i<lrow; i++){ 
     for (int j=0; j<train_size; j++){
       f(i, j) = hg->lMat(i, j); 
