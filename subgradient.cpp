@@ -126,7 +126,7 @@ mat Subgradient::sgm(Hypergraph *hg, int train_size, double precision, char actf
   mat f = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
   f.row(ind) = ones<rowvec>(lCol);
   f = recoverF(hg, f, train_size);
-  for (int i=0; i<1000; i++){
+  for (int i=0; i<1/precision+1; i++){
     mat gn = computeDelta(f, hg, train_size, actfunc, lossfunc);
     f = f - (0.9/norm(gn)) * gn;
     recoverF(hg, f, train_size);
