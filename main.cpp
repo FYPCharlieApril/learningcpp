@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
   long int starttime = tp.tv_sec * 1000 + tp.tv_usec / 1000;  
 
   //core work here
-  Mat<unsigned int> result = sg->fitPredict(hg, train_size, actfunc, lossfunc);
+  Mat<unsigned int> result = sg->fitPredict(hg, train_size, precision, actfunc, lossfunc);
   
   //record the end time of the task
   gettimeofday(&tp, NULL);

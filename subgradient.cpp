@@ -31,13 +31,13 @@ double lossGradient(double u, double v, char method){
   double diff = u-v;
   switch (method){
     case 'g': // gradient for gaussian function
-      return 2*diff*exp(-diff*diff);
+      return 1.5*diff*exp(-3*diff*diff);
     default: // default function: quadratic
       return diff;
   }
 }
 
-Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, char actfunc, char lossfunc ){
+Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, double precision, char actfunc, char lossfunc ){
   Mat<unsigned int> result = zeros<Mat<unsigned int>>(hg->lMat.n_rows, hg->lMat.n_cols);
   
   int lRow = hg->lMat.n_rows; int lCol = hg->lMat.n_cols;
@@ -47,7 +47,7 @@ Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, char a
   mat f_a = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
 
   for (int i=0; i<lRow; i++){
-    sgmWorker[i] = thread(&Subgradient::sgm, this, hg, train_size, actfunc, lossfunc, i, ref(f_a));
+    sgmWorker[i] = thread(&Subgradient::sgm, this, hg, train_size, precision, actfunc, lossfunc, i, ref(f_a));
   }
 
   for (int i=0; i<lRow; i++){
@@ -76,9 +76,9 @@ Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, char a
 
 // compute the delta value for f in each iteration
 mat Subgradient::computeDelta(mat f, Hypergraph *hg, int train_size, char actfunc, char lossfunc){
-  int hrow = hg -> hMat.n_rows; // number of edges 117
-  int hcol = hg -> hMat.n_cols; // dataset size 8124 
-  int lrow = hg -> lMat.n_rows; // number of classes 2
+  int hrow = hg -> hMat.n_rows; // number of edges 
+  int hcol = hg -> hMat.n_cols; // dataset size 
+  int lrow = hg -> lMat.n_rows; // number of classes 
   
   mat f_out = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
 
@@ -120,7 +120,7 @@ mat Subgradient::computeDelta(mat f, Hypergraph *hg, int train_size, char actfun
 }
 
 // the subgradient method core function
-mat Subgradient::sgm(Hypergraph *hg, int train_size, char actfunc, char lossfunc, int ind, mat& f_a){
+mat Subgradient::sgm(Hypergraph *hg, int train_size, double precision, char actfunc, char lossfunc, int ind, mat& f_a){
   int lRow = hg->lMat.n_rows; 
   int lCol = hg->lMat.n_cols;
   mat f = zeros<mat>(hg->lMat.n_rows, hg->lMat.n_cols);
