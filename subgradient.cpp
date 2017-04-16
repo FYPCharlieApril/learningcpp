@@ -27,14 +27,14 @@ double actFunc(double x, char method){
 }
 
 //alternatives for the loss function
-double lossGradient(double u, double v, char method){
+double lossGradient(double x, char method){
   switch (method){
     case 'g': // gradient for gaussian function
-      return 1.5*u*exp(-0.3*u*u) - 1.5*v*exp(-0.3*v*v);
-    case 'c':
-      return 0.5*(log((u+1)/(v+1)) + log((1-v)/(1-u)));
+      return 1.5*(x-0.5)*exp(-0.3*(x-0.5)*(x-0.5));
+    case 'c': // gradient for cross entropy
+      return 0.25*(log(x)-log(1-x));
     default: // default function: quadratic
-      return u-v;
+      return x;
   }
 }
 
@@ -104,7 +104,7 @@ mat Subgradient::computeDelta(mat f, Hypergraph *hg, int train_size, char actfun
        } 
        double u = rt.max(); //may be replaced by heap
        double v = rh.min(); //may be replaced by heap
-       double d = hg->weight(i) * lossGradient(u, v, lossfunc);
+       double d = hg->weight(i) * (lossGradient(u, lossfunc)-lossGradient(v, lossfunc));
        if (u - v > 0){
          uword id;
 	 for (int k=0; k<allTailId.n_rows; k++){
