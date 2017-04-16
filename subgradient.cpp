@@ -28,12 +28,13 @@ double actFunc(double x, char method){
 
 //alternatives for the loss function
 double lossGradient(double u, double v, char method){
-  double diff = u-v;
   switch (method){
     case 'g': // gradient for gaussian function
-      return 1.5*diff*exp(-3*diff*diff);
+      return 1.5*u*exp(-0.3*u*u) - 1.5*v*exp(-0.3*v*v);
+    case 'c':
+      return 0.5*(log((u+1)/(v+1)) + log((1-v)/(1-u)));
     default: // default function: quadratic
-      return diff;
+      return u-v;
   }
 }
 
@@ -70,7 +71,7 @@ Mat<unsigned int> Subgradient::fitPredict(Hypergraph *hg, int train_size, double
     }
     result(res_c, i) = 1;
   }
-  evalAcc(hg->lMat, result);
+  evalAcc(hg->lMat, result, train_size);
   return result;
 }
 
@@ -101,9 +102,9 @@ mat Subgradient::computeDelta(mat f, Hypergraph *hg, int train_size, char actfun
        for (int k=0; k<allHeadId.n_rows; k++){
          rh(k) = rj(allHeadId(k));
        } 
-       double u = max(rt); //may be replaced by heap
-       double v = min(rh); //may be replaced by heap
-       double d = hg->weight(i) * lossGradient(u, v, lossfunc); 
+       double u = rt.max(); //may be replaced by heap
+       double v = rh.min(); //may be replaced by heap
+       double d = hg->weight(i) * lossGradient(u, v, lossfunc);
        if (u - v > 0){
          uword id;
 	 for (int k=0; k<allTailId.n_rows; k++){
@@ -127,7 +128,8 @@ mat Subgradient::sgm(Hypergraph *hg, int train_size, double precision, char actf
   f.row(ind) = ones<rowvec>(lCol);
   f = recoverF(hg, f, train_size);
   for (int i=0; i<1/precision+1; i++){
-    mat gn = computeDelta(f, hg, train_size, actfunc, lossfunc);
+  //while (abs(normc - old_normc) > precision){
+    mat gn = computeDelta(f, hg, train_size, actfunc, lossfunc); 
     f = f - (0.9/norm(gn)) * gn;
     recoverF(hg, f, train_size);
   }
@@ -153,7 +155,7 @@ mat Subgradient::recoverF(Hypergraph* hg, mat &f, int train_size){
   return f;
 }
 
-double Subgradient::evalAcc(Mat<unsigned int> target, Mat<unsigned int> prediction){
+double Subgradient::evalAcc(Mat<unsigned int> target, Mat<unsigned int> prediction, int train_size){
   int r = target.n_rows; 
   int c = target.n_cols; 
   int coun = 0;
@@ -165,7 +167,7 @@ double Subgradient::evalAcc(Mat<unsigned int> target, Mat<unsigned int> predicti
     }
     if (flag) coun ++;
   }
-  accuracy = double(coun)/double(c);
+  accuracy = (double(coun)-double(train_size))/(double(c)-double(train_size));
   printf("the accuracy is: %f\n", accuracy);
   return 0;
 

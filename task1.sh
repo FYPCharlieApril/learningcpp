@@ -1,26 +1,5 @@
-./main_para audiology.csv 0.001 0 5 5 20 e x temp;
-./main_para audiology.csv 0.001 0 5 5 20 e x temp;
-./main_para audiology.csv 0.001 0 5 5 20 e x temp;
-./main_para audiology.csv 0.001 0 5 5 20 e x temp;
-./main_para audiology.csv 0.001 0 5 5 20 e x temp;
-./main_para audiology.csv 0.001 0 4 4 20 e x temp;
-./main_para audiology.csv 0.001 0 4 4 20 e x temp;
-./main_para audiology.csv 0.001 0 4 4 20 e x temp;
-./main_para audiology.csv 0.001 0 4 4 20 e x temp;
-./main_para audiology.csv 0.001 0 4 4 20 e x temp;
-./main_para audiology.csv 0.001 0 3 3 20 e x temp;
-./main_para audiology.csv 0.001 0 3 3 20 e x temp;
-./main_para audiology.csv 0.001 0 3 3 20 e x temp;
-./main_para audiology.csv 0.001 0 3 3 20 e x temp;
-./main_para audiology.csv 0.001 0 3 3 20 e x temp;
-./main_para audiology.csv 0.001 0 2 2 20 e x temp;
-./main_para audiology.csv 0.001 0 2 2 20 e x temp;
-./main_para audiology.csv 0.001 0 2 2 20 e x temp;
-./main_para audiology.csv 0.001 0 2 2 20 e x temp;
-./main_para audiology.csv 0.001 0 2 2 20 e x temp;
-./main_para audiology.csv 0.001 0 1 1 20 e x temp;
-./main_para audiology.csv 0.001 0 1 1 20 e x temp;
-./main_para audiology.csv 0.001 0 1 1 20 e x temp;
-./main_para audiology.csv 0.001 0 1 1 20 e x temp;
-./main_para audiology.csv 0.001 0 1 1 20 e x temp;
-
+for (( i=20; i<=100; i=i+20 ))
+do
+	echo "$i" >> log/cartemp.txt;
+	./main audiology.csv 0 0.001 $i x x audiotemp;
+done

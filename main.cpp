@@ -7,7 +7,8 @@
 int main(int argc, char* argv[])
 { 
   //read parameters for the learning
-  //run example: ./main mushroom.csv 1 0.001 20 x x mushtemp
+  //run example: ./main_para mushroom.csv 1 0.001 20 x x mushtemp
+
   string datasetname = argv[1];
   bool front = atoi(argv[2]);
   double precision = atof(argv[3]);  
@@ -23,8 +24,8 @@ int main(int argc, char* argv[])
   Hypergraph *hg = new Hypergraph;
 
   myfile.open ("log/"+resFile+".txt", ios::out | ios::app);
-  myfile << "[Precision] "+to_string(precision)<<endl;
-  myfile << "[Number of labeled data] " + to_string(train_size) <<endl;
+  //myfile << "[Precision] "+to_string(precision)<<endl;
+  //myfile << "[Number of labeled data] " + to_string(train_size) <<endl;
 
   bool res = hg->constructHMat("dataset/"+datasetname, front);
   mlpack::data::Save("log/oh_fea.txt", hg->hMat);
@@ -44,7 +45,8 @@ int main(int argc, char* argv[])
   long int endtime = tp.tv_sec * 1000 + tp.tv_usec / 1000;
   
   //write accuracy to the log file
-  myfile << "[accuracy] " <<sg->accuracy<<endl;
+  //myfile << "[accuracy] " <<sg->accuracy<<endl;
+  myfile <<sg->accuracy<<endl;
   //write result to log
   mlpack::data::Save("log/result.txt", result);
   
@@ -54,7 +56,7 @@ int main(int argc, char* argv[])
   sec = sec % 60;
   
   //write spent time to the log file
-  myfile << "[time] "<<min<<" mins "<<sec<<" secs"<<endl;
+  //myfile << "[time] "<<min<<" mins "<<sec<<" secs"<<endl;
   printf("Spent time: %d minutes %d seconds\n", min, sec);
   delete hg, sg;
   hg = NULL;
